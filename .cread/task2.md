@@ -111,6 +111,7 @@ SSM parameter /cdk-bootstrap/.../version
 cdk bootstrap aws://410859982763/us-east-1 --profile cloudx-js
 
 
+
 Після успішного завершення буде створено всі потрібні ресурси.
 
 Потім можна робити деплой:

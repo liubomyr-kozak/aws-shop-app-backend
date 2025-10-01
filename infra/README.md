@@ -1,7 +1,7 @@
 # MyShop! App Deployment
 
 ## Links
-- S3 Website URL: http://aws-practitioner-js-bucket-v1.s3-website-us-east-1.amazonaws.com/
+- S3 Website URL: http://aws-practitioner-js-bucket-v1.s3-website-us-east-2.amazonaws.com/
 - CloudFront URL: https://d2t7ay53fw9jwt.cloudfront.net/
 - Auto deploy CloudFront URL https://d3omgmoj29znv9.cloudfront.net/
 
