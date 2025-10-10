@@ -1,13 +1,14 @@
 import axios, { AxiosError } from "axios";
 import React from "react";
 import { useQuery, useQueryClient, useMutation } from "react-query";
-import API_PATHS from "~/constants/apiPaths";
+import { API_PATHS } from "~/constants/apiPaths";
 import { OrderStatus } from "~/constants/order";
 import { Order } from "~/models/Order";
 
 export function useOrders() {
   return useQuery<Order[], AxiosError>("orders", async () => {
-    const res = await axios.get<Order[]>(`${API_PATHS.order}/order`);
+    const api = await API_PATHS;
+    const res = await axios.get<Order[]>(`${api.order}/order`);
     return res.data;
   });
 }
@@ -22,9 +23,10 @@ export function useInvalidateOrders() {
 
 export function useUpdateOrderStatus() {
   return useMutation(
-    (values: { id: string; status: OrderStatus; comment: string }) => {
+    async (values: { id: string; status: OrderStatus; comment: string }) => {
+      const api = await API_PATHS;
       const { id, ...data } = values;
-      return axios.put(`${API_PATHS.order}/order/${id}/status`, data, {
+      return axios.put(`${api.order}/order/${id}/status`, data, {
         headers: {
           Authorization: `Basic ${localStorage.getItem("authorization_token")}`,
         },
@@ -34,8 +36,9 @@ export function useUpdateOrderStatus() {
 }
 
 export function useSubmitOrder() {
-  return useMutation((values: Omit<Order, "id">) => {
-    return axios.put<Omit<Order, "id">>(`${API_PATHS.order}/order`, values, {
+  return useMutation(async (values: Omit<Order, "id">) => {
+    const api = await API_PATHS;
+    return axios.put<Omit<Order, "id">>(`${api.order}/order`, values, {
       headers: {
         Authorization: `Basic ${localStorage.getItem("authorization_token")}`,
       },
@@ -53,11 +56,12 @@ export function useInvalidateOrder() {
 }
 
 export function useDeleteOrder() {
-  return useMutation((id: string) =>
-    axios.delete(`${API_PATHS.order}/order/${id}`, {
+  return useMutation(async (id: string) => {
+    const api = await API_PATHS;
+    return axios.delete(`${api.order}/order/${id}`, {
       headers: {
         Authorization: `Basic ${localStorage.getItem("authorization_token")}`,
       },
-    })
-  );
+    });
+  });
 }

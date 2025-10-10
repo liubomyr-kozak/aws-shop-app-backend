@@ -2,6 +2,7 @@
 
 This is frontend starter project for nodejs-aws mentoring program. It uses the following technologies:
 
+- Welcome
 - [Vite](https://vitejs.dev/) as a project bundler
 - [React](https://beta.reactjs.org/) as a frontend framework
 - [React-router-dom](https://reactrouterdotcom.fly.dev/) as a routing library

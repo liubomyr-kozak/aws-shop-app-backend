@@ -1,15 +1,14 @@
-import API_PATHS from "~/constants/apiPaths";
+import { API_PATHS } from "~/constants/apiPaths";
 
 class Api {
-  // ...existing code...
-
   async getProductsList() {
-    const url = `${API_PATHS.product}/products`;
+    const api = await API_PATHS;
+    const url = `${api.product}/products`;
 
     const response = await fetch(url, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
@@ -19,9 +18,6 @@ class Api {
 
     return response.json();
   }
-
-  // ...existing code...
 }
 
 export default new Api();
-

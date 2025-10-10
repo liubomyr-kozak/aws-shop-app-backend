@@ -12,7 +12,8 @@
     "build-app": "cd ../ && npm run build",
     "cdk:synth": "cdk synth --profile cloudx-js",
     "cdk:deploy": "cdk deploy --require-approval never --profile cloudx-js",
-    "cdk:destroy": "cdk destroy --force --profile cloudx-js"
+    "cdk:destroy": "cdk destroy --force --profile cloudx-js",
+    "seed": "node scripts/seed.js"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
@@ -27,6 +28,7 @@
   "dependencies": {
     "aws-cdk-lib": "2.214.0",
     "constructs": "^10.0.0",
-    "source-map-support": "^0.5.21"
+    "source-map-support": "^0.5.21",
+    "aws-sdk": "^2.1672.0"
   }
 }
