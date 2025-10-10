@@ -1,14 +1,9 @@
-const API_PATHS = {
-  product: "https://your-api-gateway-url.execute-api.region.amazonaws.com/prod",
-  order: "https://your-order-api-url",
-  import: "https://your-import-api-url",
-  bff: "https://your-bff-api-url",
-  cart: "https://your-cart-api-url",
-    // product: "https://.execute-api.eu-west-1.amazonaws.com/dev",
-    // order: "https://.execute-api.eu-west-1.amazonaws.com/dev",
-    // import: "https://.execute-api.eu-west-1.amazonaws.com/dev",
-    // bff: "https://.execute-api.eu-west-1.amazonaws.com/dev",
-    // cart: "https://.execute-api.eu-west-1.amazonaws.com/dev",
-};
+const url = "https://exy6lqls1g.execute-api.us-east-2.amazonaws.com/prod";
 
-export default API_PATHS;
+export const API_PATHS = {
+  product: url,
+  order: url,
+  import: url,
+  bff: url,
+  cart: url,
+};

@@ -1,71 +1,45 @@
-const mockProducts = [
-  {
-    id: '1',
-    title: 'iPhone 14 Pro',
-    description: 'Latest Apple iPhone with Pro camera system',
-    price: 999,
-    count: 10,
-    image: 'https://example.com/iphone14pro.jpg'
-  },
-  {
-    id: '2',
-    title: 'Samsung Galaxy S23',
-    description: 'Flagship Android smartphone with advanced features',
-    price: 799,
-    count: 15,
-    image: 'https://example.com/galaxys23.jpg'
-  },
-  {
-    id: '3',
-    title: 'MacBook Pro M2',
-    description: 'Professional laptop with M2 chip',
-    price: 1299,
-    count: 8,
-    image: 'https://example.com/macbookpro.jpg'
-  },
-  {
-    id: '4',
-    title: 'iPad Air',
-    description: 'Versatile tablet for work and entertainment',
-    price: 599,
-    count: 12,
-    image: 'https://example.com/ipadair.jpg'
-  },
-  {
-    id: '5',
-    title: 'AirPods Pro',
-    description: 'Wireless earbuds with active noise cancellation',
-    price: 249,
-    count: 25,
-    image: 'https://example.com/airpodspro.jpg'
-  }
-];
+const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
+const {
+  DynamoDBDocumentClient,
+  ScanCommand,
+} = require("@aws-sdk/lib-dynamodb");
 
-exports.handler = async (event, context) => {
-  console.log('GetProductsList Lambda triggered');
+const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
+const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE_NAME;
+const STOCK_TABLE = process.env.STOCK_TABLE_NAME;
+
+const cors = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Credentials": "true",
+};
+
+exports.handler = async () => {
   try {
-    const response = {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS'
-      },
-      body: JSON.stringify(mockProducts)
-    };
+    const [prodResp, stockResp] = await Promise.all([
+      ddb.send(new ScanCommand({ TableName: PRODUCTS_TABLE })),
+      ddb.send(new ScanCommand({ TableName: STOCK_TABLE })),
+    ]);
 
-    return response;
-  } catch (error) {
-    console.error('Error:', error);
+    const stockMap = new Map(
+      (stockResp.Items || []).map((s) => [s.product_id, s.count])
+    );
+
+    const items = (prodResp.Items || []).map((p) => ({
+      id: p.id,
+      title: p.title,
+      description: p.description,
+      price: p.price,
+      count: stockMap.get(p.id) ?? 0,
+    }));
+
+    return { statusCode: 200, headers: cors, body: JSON.stringify(items) };
+  } catch (err) {
+    console.error("getProductsList error:", err);
     return {
       statusCode: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: JSON.stringify({ message: 'Internal server error' })
+      headers: cors,
+      body: JSON.stringify({ message: "Internal error" }),
     };
   }
 };

@@ -1,5 +1,8 @@
 const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const { DynamoDBDocumentClient, GetCommand } = require("@aws-sdk/lib-dynamodb");
+const {
+  DynamoDBDocumentClient,
+  DeleteCommand,
+} = require("@aws-sdk/lib-dynamodb");
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE_NAME;
@@ -19,24 +22,16 @@ exports.handler = async (event) => {
         body: JSON.stringify({ message: "productId required" }),
       };
 
-    const [p, s] = await Promise.all([
-      ddb.send(new GetCommand({ TableName: PRODUCTS_TABLE, Key: { id } })),
-      ddb.send(
-        new GetCommand({ TableName: STOCK_TABLE, Key: { product_id: id } })
-      ),
-    ]);
+    await ddb.send(
+      new DeleteCommand({ TableName: STOCK_TABLE, Key: { product_id: id } })
+    );
+    await ddb.send(
+      new DeleteCommand({ TableName: PRODUCTS_TABLE, Key: { id } })
+    );
 
-    if (!p.Item)
-      return {
-        statusCode: 404,
-        headers: cors,
-        body: JSON.stringify({ message: "Not found" }),
-      };
-
-    const result = { ...p.Item, count: s.Item?.count ?? 0 };
-    return { statusCode: 200, headers: cors, body: JSON.stringify(result) };
+    return { statusCode: 204, headers: cors, body: "" };
   } catch (err) {
-    console.error("getProductsById error:", err);
+    console.error("deleteProduct error:", err);
     return {
       statusCode: 500,
       headers: cors,
