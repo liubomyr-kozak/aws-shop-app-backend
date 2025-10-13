@@ -2,7 +2,7 @@
 # Створює CDK bootstrap та деплоїть усі стеки в одному регіоні.
 ACCOUNT="410859982763"
 PROFILE="cloudx-js"
-REGION="us-east-1"
+REGION="us-east-2"
 QUALIFIER="hnb659fds"  # залиш як є, якщо у CDK за замовчуванням
 
 set -e

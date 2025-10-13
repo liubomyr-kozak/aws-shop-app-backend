@@ -4,7 +4,7 @@
 
 ACCOUNT="410859982763"      # ← заміни, якщо треба
 PROFILE="cloudx-js"         # ← твій AWS CLI профіль
-REGIONS=("us-east-1" "us-east-2")
+REGIONS=("us-east-2")
 STACKS=("DeployWebAppStack" "ProductServiceStack")
 
 set -u  # не падаємо на помилках команд, щоб дійти до кінця
