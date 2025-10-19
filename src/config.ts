@@ -1,4 +1,7 @@
-export type AppConfig = { PRODUCT_API_BASE: string };
+export type AppConfig = {
+  PRODUCT_API_BASE: string;
+  IMPORT_API_BASE: string;
+};
 
 let _cfgPromise: Promise<AppConfig> | null = null;
 
@@ -11,11 +14,14 @@ export function loadConfig(): Promise<AppConfig> {
     })
     .then((cfg) => ({
       PRODUCT_API_BASE: String(cfg.PRODUCT_API_BASE || "").replace(/\/$/, ""),
+      IMPORT_API_BASE: String(cfg.IMPORT_API_BASE || "").replace(/\/$/, ""),
     }))
     .catch(() => ({
       PRODUCT_API_BASE:
         (import.meta as any).env?.VITE_PRODUCT_API_URL?.replace(/\/$/, "") ||
         "",
+      IMPORT_API_BASE:
+        (import.meta as any).env?.VITE_IMPORT_API_URL?.replace(/\/$/, "") || "",
     }));
   return _cfgPromise;
 }

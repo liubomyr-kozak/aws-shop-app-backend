@@ -1,128 +1,92 @@
-import * as cdk from "aws-cdk-lib";
-import { Construct } from "constructs";
-import * as s3lib from "aws-cdk-lib/aws-s3";
-import * as s3n from "aws-cdk-lib/aws-s3-notifications";
-import * as apigw from "aws-cdk-lib/aws-apigateway";
-import { Runtime } from "aws-cdk-lib/aws-lambda";
-import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
-import * as path from "path";
-import * as iam from "aws-cdk-lib/aws-iam";
 import {
-  AwsCustomResource,
-  AwsCustomResourcePolicy,
-  PhysicalResourceId,
-} from "aws-cdk-lib/custom-resources";
+  Stack,
+  RemovalPolicy,
+  StackProps,
+  Duration,
+  CfnOutput,
+} from "aws-cdk-lib";
+import { Construct } from "constructs";
+import * as s3 from "aws-cdk-lib/aws-s3";
+import * as apigateway from "aws-cdk-lib/aws-apigateway";
+import * as lambda from "aws-cdk-lib/aws-lambda";
+import * as s3deploy from "aws-cdk-lib/aws-s3-deployment";
+import * as cdk from "aws-cdk-lib";
+import * as s3n from "aws-cdk-lib/aws-s3-notifications";
 
-export class ImportServiceStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+interface LambdaStackProps extends StackProps {
+  api: cdk.aws_apigateway.RestApi;
+}
+
+export class ImportServiceStack extends Stack {
+  constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
 
-    // S3 bucket for import service
-    const bucket = new s3lib.Bucket(this, "ImportBucket", {
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    const importBucket = new s3.Bucket(this, "ImportBucket", {
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      removalPolicy: RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
-      blockPublicAccess: s3lib.BlockPublicAccess.BLOCK_ALL,
-      encryption: s3lib.BucketEncryption.S3_MANAGED,
     });
 
-    // Create uploaded/ prefix by placing a zero-byte placeholder
-    // NOTE: replace `bucket` with your actual bucket variable name if different.
-    new AwsCustomResource(this, "CreateUploadedPrefixObject", {
-      onCreate: {
-        service: "S3",
-        action: "putObject",
-        parameters: {
-          Bucket: bucket.bucketName,
-          Key: "uploaded/.gitkeep",
-          Body: "",
-          ContentType: "text/plain",
-        },
-        physicalResourceId: PhysicalResourceId.of(
-          "UploadedPrefixPlaceholder-v1"
-        ),
-      },
-      policy: AwsCustomResourcePolicy.fromSdkCalls({
-        resources: [bucket.arnForObjects("uploaded/*")],
-      }),
+    new s3deploy.BucketDeployment(this, "DeployUploadedFolder", {
+      destinationBucket: importBucket,
+      destinationKeyPrefix: "uploaded/",
+      sources: [
+        s3deploy.Source.data("placeholder.txt", "This is a placeholder file."),
+      ],
     });
 
-    // Lambda: importProductsFile -> returns signed PUT URL for uploaded/${fileName}
-    const importProductsFileFn = new NodejsFunction(
+    const importProductsFileLambda = new lambda.Function(
       this,
-      "ImportProductsFileFn",
+      "importProductsFileLambda",
       {
-        entry: path.join(__dirname, "..", "lambda", "importProductsFile.ts"),
-        handler: "handler",
-        runtime: Runtime.NODEJS_18_X,
+        runtime: lambda.Runtime.NODEJS_20_X,
+        memorySize: 128,
+        timeout: Duration.seconds(5),
+        handler: "importProducts/importProductsFileHandler.importProductsFile",
+        code: lambda.Code.fromAsset("../dist"),
         environment: {
-          BUCKET_NAME: bucket.bucketName,
-        },
-        bundling: {
-          minify: true,
-          externalModules: [],
-          sourceMap: true,
+          IMPORT_BUCKET_NAME: importBucket.bucketName,
         },
       }
     );
 
-    // Allow presigned URL to authorize PutObject into uploaded/*
-    bucket.grantPut(importProductsFileFn, "uploaded/*");
-
-    // API Gateway: GET /import -> importProductsFile
-    const api = new apigw.RestApi(this, "ImportServiceApi", {
-      restApiName: "Import Service",
-      deployOptions: { stageName: "prod" },
-      defaultCorsPreflightOptions: {
-        allowOrigins: apigw.Cors.ALL_ORIGINS,
-        allowMethods: ["GET", "OPTIONS"],
-        allowHeaders: apigw.Cors.DEFAULT_HEADERS,
-      },
-    });
-    const importRes = api.root.addResource("import");
-    importRes.addMethod(
-      "GET",
-      new apigw.LambdaIntegration(importProductsFileFn, { proxy: true })
+    const importFileParserLambda = new lambda.Function(
+      this,
+      "importFileParserLambda",
+      {
+        runtime: lambda.Runtime.NODEJS_20_X,
+        memorySize: 128,
+        timeout: Duration.seconds(10),
+        handler: "importProducts/importFileParserHandler.importFileParser",
+        code: lambda.Code.fromAsset("../dist"),
+        environment: {
+          IMPORT_BUCKET_NAME: importBucket.bucketName,
+        },
+        events: [],
+      }
     );
 
-    // Lambda: importFileParser -> triggered by S3 "uploaded/" object created
-    const importFileParserFn = new NodejsFunction(this, "ImportFileParserFn", {
-      entry: path.join(__dirname, "..", "lambda", "importFileParser.ts"),
-      handler: "handler",
-      runtime: Runtime.NODEJS_18_X,
-      environment: {
-        BUCKET_NAME: bucket.bucketName,
-      },
-      bundling: {
-        minify: true,
-        externalModules: [],
-        sourceMap: true,
-      },
-    });
+    importBucket.grantReadWrite(importProductsFileLambda);
+    importBucket.grantRead(importFileParserLambda);
 
-    // Permissions for parser to read, copy, delete objects
-    bucket.grantReadWrite(importFileParserFn);
-
-    // S3 event notification for "uploaded/" prefix
-    bucket.addEventNotification(
-      s3lib.EventType.OBJECT_CREATED,
-      new s3n.LambdaDestination(importFileParserFn),
+    importBucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      new s3n.LambdaDestination(importFileParserLambda),
       { prefix: "uploaded/" }
     );
 
-    // Explicit IAM condition to restrict presign to prefix (defense-in-depth)
-    importProductsFileFn.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: ["s3:PutObject"],
-        resources: [bucket.arnForObjects("uploaded/*")],
-      })
+    const importResource = props.api.root.addResource("import");
+    const importProductsFileIntegration = new apigateway.LambdaIntegration(
+      importProductsFileLambda,
+      {}
     );
 
-    new cdk.CfnOutput(this, "ImportApiUrl", {
-      value: api.url ?? "",
-      description: "Base URL for Import Service API",
-    });
-    new cdk.CfnOutput(this, "ImportBucketName", {
-      value: bucket.bucketName,
+    importResource.addMethod("GET", importProductsFileIntegration);
+
+    new CfnOutput(this, "ImportBucketName", {
+      value: importBucket.bucketName,
+      description:
+        "The name of the S3 bucket for the import service for uploading files",
     });
   }
 }

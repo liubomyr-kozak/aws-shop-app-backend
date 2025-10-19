@@ -1,0 +1,16 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "My Products API",
+    "version": "1.0.0",
+    "description": "Swagger docs generated from @openapi comments"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3001"
+    }
+  ],
+  "paths": {},
+  "components": {},
+  "tags": []
+}
