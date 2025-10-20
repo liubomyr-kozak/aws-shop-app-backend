@@ -21,7 +21,7 @@ export class ImportServiceStack extends Stack {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       // these two are for dev only. update these
       removalPolicy: RemovalPolicy.DESTROY,
-      autoDeleteObjects: true, // Optional: Automatically delete objects when the bucket is destroyed
+      // autoDeleteObjects: true, // Optional: Automatically delete objects when the bucket is destroyed
     });
 
     new s3deploy.BucketDeployment(this, 'DeployUploadedFolder', {
