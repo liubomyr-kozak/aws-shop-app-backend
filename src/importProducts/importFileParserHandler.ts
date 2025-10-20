@@ -2,7 +2,7 @@ import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { S3Event } from "aws-lambda";
 import csv from "csv-parser";
 
-const s3 = new S3Client({ region: process.env.AWS_REGION });
+const s3 = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
 
 export const importFileParser = async (event: S3Event) => {
   console.log("Event received:", JSON.stringify(event, null, 2));

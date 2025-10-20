@@ -2,7 +2,7 @@ import type { Handler } from "aws-lambda";
 import { DynamoDBClient, TransactWriteItemsCommand } from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from 'uuid';
 
-const dynamoDB = new DynamoDBClient({ region: process.env.AWS_REGION });
+const dynamoDB = new DynamoDBClient({ region: process.env.AWS_REGION || 'us-east-1' });
 const productsTableName = process.env.PRODUCTS_TABLE_NAME as string;
 const stocksTableName = process.env.STOCKS_TABLE_NAME as string;
 
