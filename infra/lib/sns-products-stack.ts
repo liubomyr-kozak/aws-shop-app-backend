@@ -7,20 +7,23 @@ import { SnsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import * as sns from "aws-cdk-lib/aws-sns";
 import * as subscriptions from "aws-cdk-lib/aws-sns-subscriptions";
 
-const notificationEmail = process.env.EMAIL as string;
+import 'dotenv/config';
 
 export class ProductSnsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    const notificationEmail = process.env.EMAIL;
+
+    if (!notificationEmail) {
+      throw new Error('Please provide EMAIL environment variable in your .env file');
+    }
 
     const productTopic = new sns.Topic(this, "product-topic", {
       topicName: "createProductTopic"
     });
 
 
-    if (!notificationEmail) {
-      throw new Error('Please provide context variable "notificationEmail"');
-    }
 
     // Add email subscription
     productTopic.addSubscription(

@@ -3,6 +3,9 @@ import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { S3Event } from "aws-lambda";
 import csv from "csv-parser";
 
+import 'dotenv/config';
+
+
 const s3 = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
 const sqs = new SQSClient({ region: process.env.AWS_REGION || 'us-east-1' });
 const CATALOG_QUEUE_URL = process.env.CATALOG_QUEUE_URL as string;

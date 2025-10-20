@@ -2,6 +2,8 @@ import { SQSEvent } from "aws-lambda";
 import { createProductTransaction } from "../utils";
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 
+import 'dotenv/config';
+
 const sns = new SNSClient({ region: process.env.AWS_REGION || 'us-east-1' });
 const CREATE_PRODUCT_TOPIC_ARN = process.env.CREATE_PRODUCT_TOPIC_ARN as string;
 

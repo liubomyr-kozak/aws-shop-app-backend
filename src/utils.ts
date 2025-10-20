@@ -1,6 +1,9 @@
 import { DynamoDBClient, TransactWriteItemsCommand } from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from 'uuid';
 
+import 'dotenv/config';
+
+
 const dynamoDB = new DynamoDBClient({ region: process.env.AWS_REGION || 'us-east-1' });
 const productsTableName = process.env.PRODUCTS_TABLE_NAME as string;
 const stocksTableName = process.env.STOCKS_TABLE_NAME as string;

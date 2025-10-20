@@ -1,5 +1,7 @@
 // Script to seed Stocks table with random counts for each product
 import { DynamoDBClient, ScanCommand, PutItemCommand } from '@aws-sdk/client-dynamodb';
+import 'dotenv/config';
+
 
 const PRODUCTS_TABLE = 'Products';
 const STOCKS_TABLE = 'Stocks';
