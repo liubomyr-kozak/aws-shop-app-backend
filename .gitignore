@@ -35,3 +35,4 @@ logs/
 # AWS SAM / Lambda local
 .localstack/
 .cread
+*docs/

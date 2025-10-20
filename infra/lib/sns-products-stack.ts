@@ -1,15 +1,14 @@
 // Filename: product-sns-stack.ts
-import * as path from "path";
 import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
-import * as lambda from "aws-cdk-lib/aws-lambda";
-import { SnsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import * as sns from "aws-cdk-lib/aws-sns";
 import * as subscriptions from "aws-cdk-lib/aws-sns-subscriptions";
 
 import 'dotenv/config';
 
 export class ProductSnsStack extends cdk.Stack {
+  public readonly productTopic: sns.Topic;
+
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
@@ -19,32 +18,48 @@ export class ProductSnsStack extends cdk.Stack {
       throw new Error('Please provide EMAIL environment variable in your .env file');
     }
 
-    const productTopic = new sns.Topic(this, "product-topic", {
+    this.productTopic = new sns.Topic(this, "product-topic", {
       topicName: "createProductTopic"
     });
 
 
 
-    // Add email subscription
-    productTopic.addSubscription(
+    // Add primary email subscription (receives all notifications)
+    this.productTopic.addSubscription(
       new subscriptions.EmailSubscription(notificationEmail)
     );
 
-    const lambdaFunction = new lambda.Function(this, "sns-lambda", {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      memorySize: 1024,
-      timeout: cdk.Duration.seconds(5),
-      handler: 'products/catalogBatchProcessHandler.catalogBatchProcess',
-      code: lambda.Code.fromAsset(path.join(__dirname, "./")),
-      environment: {
-        EMAIL: notificationEmail,
-        CREATE_PRODUCT_TOPIC_ARN: productTopic.topicArn
-      }
-    });
+    // Add filtered email subscription for expensive products (price > 50)
+    this.productTopic.addSubscription(
+      new subscriptions.EmailSubscription(`expensive-${notificationEmail}`, {
+        filterPolicy: {
+          price: sns.SubscriptionFilter.numericFilter({
+            greaterThan: 50
+          })
+        }
+      })
+    );
 
-    // Grant Lambda permission to publish to the topic
-    productTopic.grantPublish(lambdaFunction);
+    // Add filtered email subscription for high-stock products (count > 100)
+    this.productTopic.addSubscription(
+      new subscriptions.EmailSubscription(`high-stock-${notificationEmail}`, {
+        filterPolicy: {
+          count: sns.SubscriptionFilter.numericFilter({
+            greaterThan: 100
+          })
+        }
+      })
+    );
 
-    lambdaFunction.addEventSource(new SnsEventSource(productTopic));
+    // Add filtered email subscription for specific product category
+    this.productTopic.addSubscription(
+      new subscriptions.EmailSubscription(`electronics-${notificationEmail}`, {
+        filterPolicy: {
+          category: sns.SubscriptionFilter.stringFilter({
+            allowlist: ['electronics', 'gadgets']
+          })
+        }
+      })
+    );
   }
 }

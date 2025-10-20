@@ -6,10 +6,11 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import * as cdk from 'aws-cdk-lib';
 import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
-
+import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 interface LambdaStackProps extends StackProps {
-  api: cdk.aws_apigateway.RestApi
+  api: cdk.aws_apigateway.RestApi;
+  catalogItemsQueue: sqs.Queue;
 }
 
 export class ImportServiceStack extends Stack {
@@ -50,12 +51,16 @@ export class ImportServiceStack extends Stack {
       code: lambda.Code.fromAsset("../dist"),
       environment: {
         IMPORT_BUCKET_NAME: importBucket.bucketName,
+        CATALOG_QUEUE_URL: props.catalogItemsQueue.queueUrl,
       },
       events: [],
     });
 
     importBucket.grantReadWrite(importProductsFileLambda);
     importBucket.grantRead(importFileParserLambda);
+
+    // Grant SQS permissions to importFileParser lambda
+    props.catalogItemsQueue.grantSendMessages(importFileParserLambda);
 
      // Add S3 event notification for the 'uploaded/' prefix
      importBucket.addEventNotification(

@@ -1,22 +1,22 @@
-// Filename: hello-lambda-stack.ts
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { ITable } from "aws-cdk-lib/aws-dynamodb";
 
+// Конфігурація CORS для фронтенд додатку
 const frontendOrigin = process.env.FRONTEND_ORIGIN || "localhost:3000";
 
 const ProductsTable = "Products";
 const StocksTable = "Stocks";
 
 interface LambdaStackProps extends cdk.StackProps {
-  productsTable: ITable; // pass from DatabaseStack
+  productsTable: ITable;
   stocksTable: ITable;
 }
 
 export class ProductsApiStack extends cdk.Stack {
-  public readonly api: apigateway.RestApi; // Expose the API Gateway instance
+  public readonly api: apigateway.RestApi;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -42,7 +42,7 @@ export class ProductsApiStack extends cdk.Stack {
       memorySize: 128,
       timeout: cdk.Duration.seconds(5),
       handler: 'products/getProductByIdHandler.getProductById',
-      code: lambda.Code.fromAsset("../dist"), // compiled TS output
+      code: lambda.Code.fromAsset("../dist"),
       environment: {
         FRONTEND_ORIGIN: process.env.FRONTEND_ORIGIN || "localhost:3000",
         PRODUCTS_TABLE_NAME: ProductsTable,
@@ -58,7 +58,7 @@ export class ProductsApiStack extends cdk.Stack {
       memorySize: 128,
       timeout: cdk.Duration.seconds(5),
       handler: 'products/createProductHandler.createProduct',
-      code: lambda.Code.fromAsset("../dist"), // compiled TS output
+      code: lambda.Code.fromAsset("../dist"),
       environment: {
         FRONTEND_ORIGIN: process.env.FRONTEND_ORIGIN || "localhost:3000",
         PRODUCTS_TABLE_NAME: ProductsTable,
@@ -78,23 +78,19 @@ export class ProductsApiStack extends cdk.Stack {
     const productIdLambdaIntegration = new apigateway.LambdaIntegration(productIdLambda, {});
     const createProductLambdaIntegration = new apigateway.LambdaIntegration(createProductLambda, {});
 
-    // Create a resource /products and GET request under it
     const productsResource = this.api.root.addResource("products");
+
+    // TODO: Розкоментувати CORS налаштування при потребі
     // productsResource.addCorsPreflight({
     //   allowOrigins: [process.env.FRONTEND_ORIGIN || "localhost:3000"],
-    //   allowMethods: ['GET'],
+    //   allowMethods: ['GET', 'POST'],
     // });
 
+    // Додаємо методи до /products ресурсу
     productsResource.addMethod("GET", productsLambdaIntegration);
     productsResource.addMethod("POST", createProductLambdaIntegration);
-    // productsResource.addCorsPreflight({
-    //   allowOrigins: [process.env.FRONTEND_ORIGIN || "localhost:3000"],
-    //   allowMethods: ['GET'],
-    // });
 
-    // Create a resource /products/{productId} and GET request under it
     const productResource = productsResource.addResource('{productId}');
     productResource.addMethod("GET", productIdLambdaIntegration);
-
   }
 }

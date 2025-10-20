@@ -10,7 +10,6 @@ import 'dotenv/config';
 
 const app = new cdk.App();
 
-// Use environment variables for CDK environment configuration
 const env = {
   account: process.env.CDK_DEFAULT_ACCOUNT,
   region: process.env.AWS_REGION || process.env.CDK_DEFAULT_REGION
@@ -24,10 +23,15 @@ const productsApiStack = new ProductsApiStack(app, 'ProductsApiStack', {
   env
 });
 
-const importStack = new ImportServiceStack(app, "ImportServiceStack", {
-  api: productsApiStack.api,
+const productSnsStack = new ProductSnsStack(app, "ProductSnsStack", { env });
+
+const catalogSqsStack = new CatalogSqs(app, "CatalogSqs", {
+  productTopic: productSnsStack.productTopic,
   env
 });
 
-const catalogSqsStack = new CatalogSqs(app, "CatalogSqs", { env });
-const productSnsStack = new ProductSnsStack(app, "ProductSnsStack", { env });
+const importStack = new ImportServiceStack(app, "ImportServiceStack", {
+  api: productsApiStack.api,
+  catalogItemsQueue: catalogSqsStack.catalogItemsQueue,
+  env
+});
