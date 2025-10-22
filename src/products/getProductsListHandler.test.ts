@@ -4,7 +4,7 @@ import * as ProductService from "./productService";
 describe("getProductsList Lambda", () => {
 
   afterEach(() => {
-    jest.restoreAllMocks(); // restore all spies/mocks after each test
+    jest.restoreAllMocks();
   });
 
 

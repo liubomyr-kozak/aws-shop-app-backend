@@ -6,10 +6,11 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import * as cdk from 'aws-cdk-lib';
 import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
-
+import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 interface LambdaStackProps extends StackProps {
-  api: cdk.aws_apigateway.RestApi
+  api: cdk.aws_apigateway.RestApi;
+  catalogItemsQueue: sqs.Queue;
 }
 
 export class ImportServiceStack extends Stack {
@@ -21,7 +22,7 @@ export class ImportServiceStack extends Stack {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       // these two are for dev only. update these
       removalPolicy: RemovalPolicy.DESTROY,
-      // autoDeleteObjects: true, // Optional: Automatically delete objects when the bucket is destroyed
+      autoDeleteObjects: true, // Optional: Automatically delete objects when the bucket is destroyed
     });
 
     new s3deploy.BucketDeployment(this, 'DeployUploadedFolder', {
@@ -35,7 +36,9 @@ export class ImportServiceStack extends Stack {
       memorySize: 128,
       timeout: Duration.seconds(5),
       handler: 'importProducts/importProductsFileHandler.importProductsFile',
-      code: lambda.Code.fromAsset("../dist"), // compiled TS output 
+      code: lambda.Code.fromAsset("../dist", {
+          exclude: ["cdk.out", "node_modules", ".git", "*.zip"],
+      }), // compiled TS output
       environment: {
         IMPORT_BUCKET_NAME: importBucket.bucketName,
       },
@@ -47,15 +50,21 @@ export class ImportServiceStack extends Stack {
       memorySize: 128,
       timeout: Duration.seconds(10),
       handler: 'importProducts/importFileParserHandler.importFileParser', // Adjust the handler path as needed
-      code: lambda.Code.fromAsset("../dist"),
+      code: lambda.Code.fromAsset("../dist", {
+          exclude: ["cdk.out", "node_modules", ".git", "*.zip"],
+      }),
       environment: {
         IMPORT_BUCKET_NAME: importBucket.bucketName,
+        CATALOG_QUEUE_URL: props.catalogItemsQueue.queueUrl,
       },
       events: [],
     });
 
     importBucket.grantReadWrite(importProductsFileLambda);
     importBucket.grantRead(importFileParserLambda);
+
+    // Grant SQS permissions to importFileParser lambda
+    props.catalogItemsQueue.grantSendMessages(importFileParserLambda);
 
      // Add S3 event notification for the 'uploaded/' prefix
      importBucket.addEventNotification(

@@ -1,7 +1,9 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const s3 = new S3Client({ region: process.env.AWS_REGION });
+import 'dotenv/config';
+
+const s3 = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
 const bucketName = process.env.IMPORT_BUCKET_NAME as string;
 
 export const importProductsFile = async (event: any) => {

@@ -27,6 +27,11 @@
   },
   "exclude": [
     "node_modules",
-    "cdk.out"
+    "cdk.out",
+    "../cdk.out",
+    "**/cdk.out",
+    "dist",
+    "../dist",
+    "**/*.test.ts"
   ]
 }
