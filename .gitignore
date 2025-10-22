@@ -5,13 +5,21 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# TypeScript
+# Build outputs
 dist/
+build/
 *.tsbuildinfo
 
-# CDK
+# CDK outputs - prevent recursive issues
 cdk.out/
+infra/cdk.out/
+**/cdk.out/
 *.template.json
+*.template.yaml
+
+# AWS SAM / Lambda local
+.aws-sam/
+.localstack/
 
 # IDEs
 .vscode/
@@ -32,7 +40,17 @@ logs/
 .env.local
 .env.*.local
 
-# AWS SAM / Lambda local
-.localstack/
-.cread
+# Temporary files
+.tmp/
+.temp/
+*.tmp
+*.temp
+
+# Coverage reports
+coverage/
+.nyc_output/
+
+# Documentation build artifacts
 *docs/
+
+.cread

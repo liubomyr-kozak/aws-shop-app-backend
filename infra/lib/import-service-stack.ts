@@ -36,7 +36,9 @@ export class ImportServiceStack extends Stack {
       memorySize: 128,
       timeout: Duration.seconds(5),
       handler: 'importProducts/importProductsFileHandler.importProductsFile',
-      code: lambda.Code.fromAsset("../dist"), // compiled TS output 
+      code: lambda.Code.fromAsset("../dist", {
+          exclude: ["cdk.out", "node_modules", ".git", "*.zip"],
+      }), // compiled TS output
       environment: {
         IMPORT_BUCKET_NAME: importBucket.bucketName,
       },
@@ -48,7 +50,9 @@ export class ImportServiceStack extends Stack {
       memorySize: 128,
       timeout: Duration.seconds(10),
       handler: 'importProducts/importFileParserHandler.importFileParser', // Adjust the handler path as needed
-      code: lambda.Code.fromAsset("../dist"),
+      code: lambda.Code.fromAsset("../dist", {
+          exclude: ["cdk.out", "node_modules", ".git", "*.zip"],
+      }),
       environment: {
         IMPORT_BUCKET_NAME: importBucket.bucketName,
         CATALOG_QUEUE_URL: props.catalogItemsQueue.queueUrl,

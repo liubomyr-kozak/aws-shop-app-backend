@@ -5,7 +5,29 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "bundle:products": "esbuild src/products/getProductsListHandler.ts src/products/getProductByIdHandler.ts src/products/createProductHandler.ts src/importProducts/importProductsFileHandler.ts src/importProducts/importFileParserHandler.ts  --bundle --platform=node --tree-shaking --target=node20  --minify --keep-names --outdir=dist",
+    "clean": "rm -rf dist cdk.out infra/cdk.out",
+    "clean:dist": "rm -rf dist",
+    "clean:cdk": "rm -rf cdk.out infra/cdk.out",
+
+    "bundle:products-api": "npm run clean:dist && esbuild src/products/getProductsListHandler.ts src/products/getProductByIdHandler.ts src/products/createProductHandler.ts src/products/catalogBatchProcessHandler.ts --bundle --platform=node --tree-shaking --target=node20 --minify --keep-names --outdir=dist",
+    "bundle:import-service": "npm run clean:dist && esbuild src/importProducts/importProductsFileHandler.ts src/importProducts/importFileParserHandler.ts --bundle --platform=node --tree-shaking --target=node20 --minify --keep-names --outdir=dist",
+    "bundle:products": "npm run bundle:products-api && npm run bundle:import-service",
+    "bundle:all": "npm run clean && npm run bundle:products",
+    "bundle:watch": "npm run bundle:products-api -- --watch & npm run bundle:import-service -- --watch",
+
+    "pre-deploy": "npm run bundle:all",
+    "deploy:bootstrap": "cd infra && npx cdk bootstrap aws://410859982763/us-east-1 --profile cloudx-js",
+    "deploy:all": "npm run pre-deploy && cd infra && npx cdk deploy --all --profile cloudx-js --require-approval never",
+    "deploy:db": "npm run pre-deploy && cd infra && npx cdk deploy ProductsDbStack --profile cloudx-js",
+    "deploy:api": "npm run pre-deploy && cd infra && npx cdk deploy ProductsApiStack --profile cloudx-js",
+    "deploy:import": "npm run pre-deploy && cd infra && npx cdk deploy ImportServiceStack --profile cloudx-js",
+    "deploy:sqs": "npm run pre-deploy && cd infra && npx cdk deploy CatalogSqs --profile cloudx-js",
+    "deploy:sns": "npm run pre-deploy && cd infra && npx cdk deploy ProductSnsStack --profile cloudx-js",
+
+    "cdk:diff": "cd infra && npx cdk diff --profile cloudx-js",
+    "cdk:synth": "cd infra && npx cdk synth --profile cloudx-js",
+    "cdk:destroy": "cd infra && npx cdk destroy --all --profile cloudx-js",
+
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "seed:products": "ts-node scripts/seed-products.ts",
@@ -26,6 +48,7 @@
     "aws-sdk-client-mock": "^4.1.0",
     "esbuild": "^0.25.10",
     "jest": "^30.1.3",
+    "rimraf": "^5.0.5",
     "swagger-ui-dist": "^5.29.0",
     "ts-jest": "^29.4.4",
     "ts-node": "^10.9.2",
@@ -39,6 +62,7 @@
     "aws-lambda": "^1.0.7",
     "csv-parser": "^3.2.0",
     "swagger-jsdoc": "^6.2.8",
+    "dotenv": "^17.2.3",
     "uuid": "^8.3.2"
   }
 }
