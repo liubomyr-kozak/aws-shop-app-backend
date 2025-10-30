@@ -1,15 +1,8 @@
-# MyShop! App Deployment
+# Welcome to your CDK TypeScript project
 
-## Links
-- S3 Website URL: http://aws-practitioner-js-bucket-v1.s3-website-us-east-2.amazonaws.com/
-- CloudFront URL: https://d2t7ay53fw9jwt.cloudfront.net/
-- Auto deploy CloudFront URL https://d3omgmoj29znv9.cloudfront.net/
+This is a blank project for CDK development with TypeScript.
 
-## Deployment Instructions
-1. Build the app: `npm run build-app`
-2. Synthesize template: `npm run cdk:synth`
-2. Deploy the app: `npm run cdk:deploy`
-3. Destroy infrastructure: `npm run cdk:destroy`
+The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
 ## Useful commands
 

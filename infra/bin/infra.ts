@@ -1,18 +1,29 @@
 #!/usr/bin/env node
-import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { DeployWebAppStack } from '../lib/deploy-web-app-stack';
-import { ProductServiceStack } from '../lib/product-service-stack';
+import { ProductsApiStack } from '../lib/api-products-stack';
+import { ProductsDbStack } from '../lib/products-db-stack';
+import { ImportServiceStack } from "../lib/import-service-stack";
 
 const app = new cdk.App();
+const dbStack = new ProductsDbStack(app, "ProductsDbStack");
+const productsApiStack = new ProductsApiStack(app, 'ProductsApiStack', {
+  productsTable: dbStack.productsTable,
+  stocksTable: dbStack.stocksTable
+  /* If you don't specify 'env', this stack will be environment-agnostic.
+   * Account/Region-dependent features and context lookups will not work,
+   * but a single synthesized template can be deployed anywhere. */
 
-const envUsEast2 = { account: "410859982763", region: "us-east-2" };
+  /* Uncomment the next line to specialize this stack for the AWS Account
+   * and Region that are implied by the current CLI configuration. */
+  // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
 
-// Create ProductServiceStack first to get API URL
-const productServiceStack = new ProductServiceStack(app, "ProductServiceStack", { env: envUsEast2 });
+  /* Uncomment the next line if you know exactly what Account and Region you
+   * want to deploy the stack to. */
+  // env: { account: '123456789012', region: 'us-east-1' },
 
-// Create DeployWebAppStack and pass API URL from ProductServiceStack
-new DeployWebAppStack(app, "DeployWebAppStack", {
-  env: envUsEast2,
-  apiUrl: productServiceStack.apiUrl
+  /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
+});
+
+new ImportServiceStack(app, "ImportServiceStack", {
+  api: productsApiStack.api
 });
