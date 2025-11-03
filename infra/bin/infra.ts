@@ -5,6 +5,7 @@ import { ProductsDbStack } from '../lib/products-db-stack';
 import { ImportServiceStack } from "../lib/import-service-stack";
 import { CatalogSqs } from '../lib/sqs-catalog-stack';
 import { ProductSnsStack } from '../lib/sns-products-stack';
+import { AuthorizationServiceStack } from "../lib/authorization-service";
 
 import 'dotenv/config';
 
@@ -15,13 +16,9 @@ const env = {
   region: process.env.AWS_REGION || process.env.CDK_DEFAULT_REGION
 };
 
-const dbStack = new ProductsDbStack(app, "ProductsDbStack", { env });
+const authStack = new AuthorizationServiceStack(app, 'AuthorizationServiceStack', { env });
 
-const productsApiStack = new ProductsApiStack(app, 'ProductsApiStack', {
-  productsTable: dbStack.productsTable,
-  stocksTable: dbStack.stocksTable,
-  env
-});
+const dbStack = new ProductsDbStack(app, "ProductsDbStack", { env });
 
 const productSnsStack = new ProductSnsStack(app, "ProductSnsStack", { env });
 
@@ -30,8 +27,16 @@ const catalogSqsStack = new CatalogSqs(app, "CatalogSqs", {
   env
 });
 
-const importStack = new ImportServiceStack(app, "ImportServiceStack", {
-  api: productsApiStack.api,
+const importServiceStack = new ImportServiceStack(app, "ImportServiceStack", {
   catalogItemsQueue: catalogSqsStack.catalogItemsQueue,
+  env
+});
+
+const productsApiStack = new ProductsApiStack(app, 'ProductsApiStack', {
+  productsTable: dbStack.productsTable,
+  stocksTable: dbStack.stocksTable,
+  importLambda: importServiceStack.importProductsFileLambda,
+  // @ts-ignore - function type compatibility
+  importAuthorizerFn: authStack.basicAuthorizerFn,
   env
 });
