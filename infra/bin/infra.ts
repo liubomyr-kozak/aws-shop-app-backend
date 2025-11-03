@@ -11,13 +11,12 @@ import 'dotenv/config';
 
 const app = new cdk.App();
 
-const authStack = new AuthorizationServiceStack(app, 'AuthorizationServiceStack', {});
-
-
 const env = {
   account: process.env.CDK_DEFAULT_ACCOUNT,
   region: process.env.AWS_REGION || process.env.CDK_DEFAULT_REGION
 };
+
+const authStack = new AuthorizationServiceStack(app, 'AuthorizationServiceStack', { env });
 
 const dbStack = new ProductsDbStack(app, "ProductsDbStack", { env });
 

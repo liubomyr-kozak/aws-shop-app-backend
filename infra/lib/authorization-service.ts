@@ -35,6 +35,7 @@ export class AuthorizationServiceStack extends cdk.Stack {
             environment: authorizerEnv,
             timeout: cdk.Duration.seconds(5),
             memorySize: 256,
+            functionName: 'basic-authorizer',
         });
     }
 }
