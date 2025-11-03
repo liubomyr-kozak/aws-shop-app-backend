@@ -20,7 +20,12 @@ export class AuthorizationServiceStack extends cdk.Stack {
             Object.entries(parsed).forEach(([k, v]) => {
                 // Add all non-AWS related environment variables as credentials
                 if (!k.startsWith('AWS_') && !k.startsWith('CDK_') && k !== 'EMAIL') {
-                    authorizerEnv[k] = v;
+                    // Sanitize key to satisfy Lambda env var constraints: [a-zA-Z]([a-zA-Z0-9_])+
+                    let sanitized = k.replace(/[^A-Za-z0-9_]/g, '_');
+                    if (!/^[A-Za-z]/.test(sanitized)) {
+                        sanitized = `U_${sanitized}`; // ensure starts with a letter
+                    }
+                    authorizerEnv[sanitized] = v;
                 }
             });
         } else {

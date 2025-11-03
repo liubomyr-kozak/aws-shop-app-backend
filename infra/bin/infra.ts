@@ -20,12 +20,6 @@ const authStack = new AuthorizationServiceStack(app, 'AuthorizationServiceStack'
 
 const dbStack = new ProductsDbStack(app, "ProductsDbStack", { env });
 
-const productsApiStack = new ProductsApiStack(app, 'ProductsApiStack', {
-  productsTable: dbStack.productsTable,
-  stocksTable: dbStack.stocksTable,
-  env
-});
-
 const productSnsStack = new ProductSnsStack(app, "ProductSnsStack", { env });
 
 const catalogSqsStack = new CatalogSqs(app, "CatalogSqs", {
@@ -33,12 +27,16 @@ const catalogSqsStack = new CatalogSqs(app, "CatalogSqs", {
   env
 });
 
-
-
-new ImportServiceStack(app, "ImportServiceStack", {
-  api: productsApiStack.api,
+const importServiceStack = new ImportServiceStack(app, "ImportServiceStack", {
   catalogItemsQueue: catalogSqsStack.catalogItemsQueue,
-  // @ts-ignore
-  basicAuthorizerFn: authStack.basicAuthorizerFn,
+  env
+});
+
+const productsApiStack = new ProductsApiStack(app, 'ProductsApiStack', {
+  productsTable: dbStack.productsTable,
+  stocksTable: dbStack.stocksTable,
+  importLambda: importServiceStack.importProductsFileLambda,
+  // @ts-ignore - function type compatibility
+  importAuthorizerFn: authStack.basicAuthorizerFn,
   env
 });

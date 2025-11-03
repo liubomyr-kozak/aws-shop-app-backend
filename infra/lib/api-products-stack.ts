@@ -4,8 +4,6 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { ITable } from "aws-cdk-lib/aws-dynamodb";
 
-// Конфігурація CORS для фронтенд додатку
-const frontendOrigin = process.env.FRONTEND_ORIGIN || "localhost:3000";
 
 const ProductsTable = "Products";
 const StocksTable = "Stocks";
@@ -13,6 +11,8 @@ const StocksTable = "Stocks";
 interface LambdaStackProps extends cdk.StackProps {
   productsTable: ITable;
   stocksTable: ITable;
+  importLambda?: lambda.IFunction;
+  importAuthorizerFn?: lambda.IFunction;
 }
 
 export class ProductsApiStack extends cdk.Stack {
@@ -94,5 +94,44 @@ export class ProductsApiStack extends cdk.Stack {
 
     const productResource = productsResource.addResource('{productId}');
     productResource.addMethod("GET", productIdLambdaIntegration);
+
+    // Optionally add /import endpoint if provided to avoid cross-stack cycles
+    if (props.importLambda && props.importAuthorizerFn) {
+      // Explicit permission for API Gateway to invoke the authorizer function, created in THIS stack
+      const stack = cdk.Stack.of(this);
+      const sourceArn = cdk.Fn.join('', [
+        'arn:', stack.partition, ':execute-api:', stack.region, ':', stack.account, ':', this.api.restApiId, '/authorizers/*'
+      ]);
+
+      new lambda.CfnPermission(this, 'AllowApiGatewayInvokeAuthorizer', {
+        action: 'lambda:InvokeFunction',
+        functionName: props.importAuthorizerFn.functionArn,
+        principal: 'apigateway.amazonaws.com',
+        sourceArn,
+      });
+
+      // Create a low-level authorizer wired to the Lambda
+      const authorizer = new apigateway.CfnAuthorizer(this, 'ImportBasicTokenAuthorizer', {
+        name: 'ImportBasicTokenAuthorizer',
+        type: 'TOKEN',
+        restApiId: this.api.restApiId,
+        identitySource: 'method.request.header.Authorization',
+        authorizerResultTtlInSeconds: 0,
+        authorizerUri: cdk.Fn.join('', [
+          'arn:', stack.partition, ':apigateway:', stack.region, ':lambda:path/2015-03-31/functions/',
+          props.importAuthorizerFn.functionArn,
+          '/invocations'
+        ]),
+      });
+
+      const importIntegration = new apigateway.LambdaIntegration(props.importLambda);
+      const importResource = this.api.root.addResource("import");
+      const importMethod = importResource.addMethod("GET", importIntegration, {
+        authorizationType: apigateway.AuthorizationType.CUSTOM,
+      });
+
+      const cfnImportMethod = importMethod.node.defaultChild as apigateway.CfnMethod;
+      cfnImportMethod.authorizerId = authorizer.ref;
+    }
   }
 }
