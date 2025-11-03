@@ -26,9 +26,7 @@ export class ProductsApiStack extends cdk.Stack {
       memorySize: 128,
       timeout: cdk.Duration.seconds(5),
       handler: 'products/getProductsListHandler.getProductsList',
-      code: lambda.Code.fromAsset("../dist", {
-          exclude: ["cdk.out", "node_modules", ".git", "*.zip"],
-      }), // compiled TS output
+      code: lambda.Code.fromAsset("../dist"), // compiled TS output
       environment: {
         FRONTEND_ORIGIN: process.env.FRONTEND_ORIGIN || "localhost:3000",
         PRODUCTS_TABLE_NAME: ProductsTable,
@@ -44,9 +42,7 @@ export class ProductsApiStack extends cdk.Stack {
       memorySize: 128,
       timeout: cdk.Duration.seconds(5),
       handler: 'products/getProductByIdHandler.getProductById',
-      code: lambda.Code.fromAsset("../dist", {
-          exclude: ["cdk.out", "node_modules", ".git", "*.zip"],
-      }),
+      code: lambda.Code.fromAsset("../dist"), // compiled TS output
       environment: {
         FRONTEND_ORIGIN: process.env.FRONTEND_ORIGIN || "localhost:3000",
         PRODUCTS_TABLE_NAME: ProductsTable,

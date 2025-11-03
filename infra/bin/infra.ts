@@ -5,10 +5,14 @@ import { ProductsDbStack } from '../lib/products-db-stack';
 import { ImportServiceStack } from "../lib/import-service-stack";
 import { CatalogSqs } from '../lib/sqs-catalog-stack';
 import { ProductSnsStack } from '../lib/sns-products-stack';
+import { AuthorizationServiceStack } from "../lib/authorization-service";
 
 import 'dotenv/config';
 
 const app = new cdk.App();
+
+const authStack = new AuthorizationServiceStack(app, 'AuthorizationServiceStack', {});
+
 
 const env = {
   account: process.env.CDK_DEFAULT_ACCOUNT,
@@ -30,8 +34,12 @@ const catalogSqsStack = new CatalogSqs(app, "CatalogSqs", {
   env
 });
 
-const importStack = new ImportServiceStack(app, "ImportServiceStack", {
+
+
+new ImportServiceStack(app, "ImportServiceStack", {
   api: productsApiStack.api,
   catalogItemsQueue: catalogSqsStack.catalogItemsQueue,
+  // @ts-ignore
+  basicAuthorizerFn: authStack.basicAuthorizerFn,
   env
 });

@@ -11,11 +11,16 @@ import * as sqs from 'aws-cdk-lib/aws-sqs';
 interface LambdaStackProps extends StackProps {
   api: cdk.aws_apigateway.RestApi;
   catalogItemsQueue: sqs.Queue;
+  basicAuthorizerFn: lambda.IFunction;
 }
+
+
 
 export class ImportServiceStack extends Stack {
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
+
+
 
     // Create S3 bucket for upload
     const importBucket = new s3.Bucket(this, 'ImportBucket', {
@@ -36,9 +41,7 @@ export class ImportServiceStack extends Stack {
       memorySize: 128,
       timeout: Duration.seconds(5),
       handler: 'importProducts/importProductsFileHandler.importProductsFile',
-      code: lambda.Code.fromAsset("../dist", {
-          exclude: ["cdk.out", "node_modules", ".git", "*.zip"],
-      }), // compiled TS output
+      code: lambda.Code.fromAsset("../dist"), // compiled TS output
       environment: {
         IMPORT_BUCKET_NAME: importBucket.bucketName,
       },
@@ -50,9 +53,7 @@ export class ImportServiceStack extends Stack {
       memorySize: 128,
       timeout: Duration.seconds(10),
       handler: 'importProducts/importFileParserHandler.importFileParser', // Adjust the handler path as needed
-      code: lambda.Code.fromAsset("../dist", {
-          exclude: ["cdk.out", "node_modules", ".git", "*.zip"],
-      }),
+      code: lambda.Code.fromAsset("../dist"),
       environment: {
         IMPORT_BUCKET_NAME: importBucket.bucketName,
         CATALOG_QUEUE_URL: props.catalogItemsQueue.queueUrl,
@@ -62,6 +63,12 @@ export class ImportServiceStack extends Stack {
 
     importBucket.grantReadWrite(importProductsFileLambda);
     importBucket.grantRead(importFileParserLambda);
+
+
+    const tokenAuthorizer = new apigateway.TokenAuthorizer(this, 'ImportBasicTokenAuthorizer', {
+      handler: props.basicAuthorizerFn,
+      resultsCacheTtl: cdk.Duration.seconds(0),
+    });
 
     // Grant SQS permissions to importFileParser lambda
     props.catalogItemsQueue.grantSendMessages(importFileParserLambda);
@@ -74,9 +81,12 @@ export class ImportServiceStack extends Stack {
     );
 
     const importResource = props.api.root.addResource("import");
-    const importProductsFileIntegration = new apigateway.LambdaIntegration(importProductsFileLambda, {});
+    const importProductsFileIntegration = new apigateway.LambdaIntegration(importProductsFileLambda);
 
-    importResource.addMethod("GET", importProductsFileIntegration);
+    importResource.addMethod("GET", importProductsFileIntegration, {
+      authorizer: tokenAuthorizer,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
+    });
 
     // Add a folder named 'uploaded' (folders in S3 are virtual, so no explicit creation is needed)
     new CfnOutput(this, 'ImportBucketName', {
