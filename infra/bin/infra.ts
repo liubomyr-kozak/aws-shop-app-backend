@@ -6,6 +6,8 @@ import { ImportServiceStack } from "../lib/import-service-stack";
 import { CatalogSqs } from '../lib/sqs-catalog-stack';
 import { ProductSnsStack } from '../lib/sns-products-stack';
 import { AuthorizationServiceStack } from "../lib/authorization-service";
+import { CartDbStack } from '../lib/cart-db-stack';
+import { CartApiStack } from '../lib/cart-api-stack';
 
 import 'dotenv/config';
 
@@ -38,5 +40,16 @@ const productsApiStack = new ProductsApiStack(app, 'ProductsApiStack', {
   importLambda: importServiceStack.importProductsFileLambda,
   // @ts-ignore - function type compatibility
   importAuthorizerFn: authStack.basicAuthorizerFn,
+  env
+});
+
+// Cart Service Stacks
+const cartDbStack = new CartDbStack(app, 'CartDbStack', { env });
+
+const cartApiStack = new CartApiStack(app, 'CartApiStack', {
+  vpc: cartDbStack.vpc,
+  dbSecret: cartDbStack.dbSecret,
+  lambdaSecurityGroup: cartDbStack.lambdaSecurityGroup,
+  dbEndpoint: cartDbStack.dbInstance.dbInstanceEndpointAddress,
   env
 });
