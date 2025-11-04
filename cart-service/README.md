@@ -35,16 +35,42 @@ NestJS-based cart service for AWS Shop Backend, deployed on AWS Lambda with RDS 
 
 ## Local Development
 
-```bash
-# Install dependencies
-yarn install --registry https://registry.npmjs.org/
+### Environment Setup
 
-# Set up environment variables
-cp .env.example .env
+1. **Copy environment template**
+   ```bash
+   cp .env.example .env
+   ```
 
-# Run locally
-npm run start:dev
-```
+2. **Configure database credentials in `.env`**
+   ```env
+   DB_HOST=your-rds-endpoint.region.rds.amazonaws.com
+   DB_PORT=5432
+   DB_USERNAME=cartadmin
+   DB_PASSWORD=your-secure-password
+   DB_NAME=cartdb
+   DB_SYNCHRONIZE=true
+   DB_LOGGING=false
+   ```
+
+3. **Install dependencies**
+   ```bash
+   yarn install --registry https://registry.npmjs.org/
+   ```
+
+4. **Run locally**
+   ```bash
+   npm run start:dev
+   ```
+
+### Security Best Practices
+
+- ✅ `.env` file is in `.gitignore` - credentials are never committed
+- ✅ Environment variables are validated on startup
+- ✅ Database credentials stored securely in AWS Secrets Manager (production)
+- ✅ Use `.env.example` as a template without sensitive data
+- ⚠️ Never commit real credentials to version control
+- ⚠️ Set `DB_SYNCHRONIZE=false` in production
 
 ## Deployment
 

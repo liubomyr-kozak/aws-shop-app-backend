@@ -73,7 +73,7 @@ export class CartDbStack extends Stack {
     // Create RDS PostgreSQL instance
     this.dbInstance = new rds.DatabaseInstance(this, 'CartDatabase', {
       engine: rds.DatabaseInstanceEngine.postgres({
-        version: rds.PostgresEngineVersion.VER_15_4,
+        version: rds.PostgresEngineVersion.VER_16_3,
       }),
       instanceType: ec2.InstanceType.of(
         ec2.InstanceClass.T3,

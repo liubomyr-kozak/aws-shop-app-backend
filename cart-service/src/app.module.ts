@@ -4,11 +4,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CartModule } from './cart/cart.module';
 import { Cart } from './entities/cart.entity';
 import { CartItem } from './entities/cart-item.entity';
+import databaseConfig, { validateDatabaseConfig } from './config/database.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '.env',
+      load: [databaseConfig],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
