@@ -23,6 +23,9 @@
     "deploy:import": "npm run pre-deploy && cd infra && npx cdk deploy ImportServiceStack --profile cloudx-js",
     "deploy:sqs": "npm run pre-deploy && cd infra && npx cdk deploy CatalogSqs --profile cloudx-js",
     "deploy:sns": "npm run pre-deploy && cd infra && npx cdk deploy ProductSnsStack --profile cloudx-js",
+    "deploy:cart-db": "cd infra && npx cdk deploy CartDbStack --profile cloudx-js",
+    "deploy:cart-api": "cd infra && npx cdk deploy CartApiStack --profile cloudx-js",
+    "deploy:cart": "cd infra && npx cdk deploy CartDbStack CartApiStack --profile cloudx-js",
 
     "cdk:diff": "cd infra && npx cdk diff --profile cloudx-js",
     "cdk:synth": "cd infra && npx cdk synth --profile cloudx-js",
